@@ -4,6 +4,59 @@
 
 #include <rafgl.h>
 
+
+typedef struct vec2
+{
+    double x;
+    double y;
+} vec2_t;
+
+static inline vec2_t vec2_add(vec2_t vec1, vec2_t vec2)
+{
+    vec2_t add_result;
+    add_result.x = vec1.x + vec2.x;
+    add_result.y = vec1.y + vec2.y;
+    return add_result;
+}
+static inline vec2_t vec2_sub(vec2_t vec1, vec2_t vec2)
+{
+    vec2_t sub_result;
+    sub_result.x = vec1.x - vec2.x;
+    sub_result.y = vec1.y - vec2.y;
+    return sub_result;
+}
+static inline vec2_t vec2_mul(vec2_t vec, double scale)
+{
+    vec2_t mul_result;
+    mul_result.x = vec.x * scale;
+    mul_result.y = vec.y * scale;
+    return vec;
+}
+
+static inline vec2_t vec2_invert(vec2_t vec)
+{
+    return vec2_mul(vec, -1);
+}
+
+double vec2_angle(vec2_t vec)
+{
+    return atan2(vec.y,vec.x);
+}
+double vec2_len(vec2_t vec)
+{
+    return sqrt(pow(vec.x,2) + pow(vec.y,2));
+}
+double vec2_dot(vec2_t vec1,vec2_t vec2)
+{
+    return vec1.x * vec2.x + vec1.y * vec2.y;
+}
+
+double vec2_dist(vec2_t vec1,vec2_t vec2)
+{
+    return vec2_len(vec2_sub(vec1,vec2));
+}
+
+
 rafgl_raster_t raster;
 rafgl_texture_t texture;
 int size_width = 1280;
