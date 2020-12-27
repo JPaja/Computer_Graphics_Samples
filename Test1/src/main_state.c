@@ -217,7 +217,7 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
         }
     }
     rafgl_raster_copy(&result_raster, &raster);
-    vec2_t center = vec2(game_data->mouse_pos_x, game_data->mouse_pos_y);//vec2(table.width*0.5,table.width*0.5);
+    vec2_t center = vec2(game_data->mouse_pos_x, game_data->mouse_pos_y);
     float maxr = rafgl_distance2D(0,0,center.x,center.y);
     if(maxr < rafgl_distance2D(0,table.height,center.x,center.y)) maxr = rafgl_distance2D(0,table.height,center.x,center.y);
     if(maxr < rafgl_distance2D(table.width,0,center.x,center.y)) maxr = rafgl_distance2D(table.width,0,center.x,center.y);
