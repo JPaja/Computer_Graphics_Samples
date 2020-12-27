@@ -11,6 +11,13 @@ typedef struct vec2
     double y;
 } vec2_t;
 
+static inline vec2_t vec2(double x , double y)
+{
+    vec2_t result;
+    result.x = x;
+    result.y = y;
+    return result;
+}
 static inline vec2_t vec2_add(vec2_t vec1, vec2_t vec2)
 {
     vec2_t add_result;
@@ -72,11 +79,13 @@ typedef struct bonker
     vec2_t mov;
 }bonker_t;
 
+#define bonker_count   10
+
 typedef struct table
 {
     int height;
     int width;
-    bonker_t bonkers[10];
+    bonker_t bonkers[bonker_count];
     int gameOver;
 }table_t;
 
@@ -93,24 +102,24 @@ void bonker_int(table_t * table,bonker_t * bonker)
     bonker->active=1;
     bonker->height=120;
     bonker->width=120;
-    bonker->pos.x = rand() % (table->width - bonker->width);
-    bonker->pos.y = rand() % (table->height - bonker->height);
-    bonker->mov.x = randf()*13;
-    bonker->mov.y = randf()*13;
+    bonker->pos.x = 1;//rand() % (table->width - bonker->width);
+    bonker->pos.y = 1;//rand() % (table->height - bonker->height);
+    bonker->mov.x = 4 +randf()*12;
+    bonker->mov.y = 4 + randf()*12;
 }
 
 void table_init(table_t* table, int width, int height)
 {
     table->width = width;
     table->height = height;
-    for(int i = 0; i <10 ;i++)
+    for(int i = 0; i <bonker_count ;i++)
         bonker_int(table,&table->bonkers[i]);   
     table->gameOver=0; 
 }
 
 void move_bonkers(table_t* table, float delta_time)
 {
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < bonker_count; i++){
         if(!table->bonkers[i].active)
             continue;
         table->bonkers[i].pos = vec2_add(table->bonkers[i].pos, vec2_mul(table->bonkers[i].mov,delta_time));
@@ -118,12 +127,12 @@ void move_bonkers(table_t* table, float delta_time)
         double y = table->bonkers[i].pos.y;
         if(y < 0||y>=table->height-table->bonkers[i].height)
         {
-            table->bonkers[i].mov.y *= -1;
+            table->bonkers[i].mov.y *= -1.06;
             table->bonkers[i].pos.y = rafgl_clampi(y,0,table->height-table->bonkers[i].height - 1);   
         }
         if(x < 0||x>=table->width-table->bonkers[i].width)
         {
-            table->bonkers[i].mov.x *= -1;
+            table->bonkers[i].mov.x *= -1.06;
             table->bonkers[i].pos.x = rafgl_clampi(x,0,table->width - table->bonkers[i].width -1);   
         }
     }
@@ -139,6 +148,7 @@ int bonker_colision(bonker_t bonker,int x, int y)
 
 
 rafgl_raster_t raster;
+rafgl_raster_t result_raster;
 
 rafgl_texture_t texture;
 int size_width = 1280;
@@ -151,12 +161,13 @@ rafgl_pixel_rgb_t color_BR;
 
 table_t table;
 
-rafgl_raster_t game_over_raster;
+rafgl_raster_t game_over_rasters[4];
 rafgl_spritesheet_t bonk_spreadsheet;
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height)
 {
     rafgl_raster_init(&raster,size_width, size_height);
+    rafgl_raster_init(&result_raster,size_width, size_height);
     rafgl_texture_init(&texture);
     color_TL.rgba = rafgl_RGB(0,0,100);
     color_TR.rgba = rafgl_RGB(100,50,150);
@@ -164,7 +175,11 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     color_BR.rgba = rafgl_RGB(100,50,250);
     table_init(&table,width,height);
 
-    rafgl_raster_load_from_image(&game_over_raster, "res/bonk1.png");
+    char tile_path[256];
+    for(int i = 1; i <= 4; i++){
+        sprintf(tile_path,"res/bonk%d.png",i);
+        rafgl_raster_load_from_image(&game_over_rasters[i - 1], tile_path);
+    }
 
     rafgl_spritesheet_init(&bonk_spreadsheet,"res/bonk_sprite.png",4,1);
 }
@@ -174,23 +189,24 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
 {
     if(game_data->keys_down[RAFGL_KEY_R])
     {
+        frame = 0;
         table_init(&table,table.width,table.height);
         return;
     }
     if(table.gameOver)
         return;
     frame += 10 * delta_time;
+    rafgl_pixel_rgb_t lt = rafgl_lerppix(color_TL,color_TR, rafgl_clampf(game_data->mouse_pos_x/size_width,0.0f,0.9f)); 
+    rafgl_pixel_rgb_t lb = rafgl_lerppix(color_BL,color_BR, rafgl_clampf(game_data->mouse_pos_x/size_width,0.0f,0.9f)); 
+    rafgl_pixel_rgb_t colour = rafgl_lerppix(lt,lb, rafgl_clampf(game_data->mouse_pos_y/size_height,0.0f,0.9f)); 
     for(int y =0 ;y < size_height; y++)
     {
         for(int x =0 ;x < size_width; x++)
         {
-            // if(player_colision(table.player,x,y))
-            //     pixel_at_m(raster,x,y) = color_BR;
-            // else
-            pixel_at_m(raster,x,y) = color_TL;
+            pixel_at_m(raster,x,y) = colour;
         } 
     }
-    for(int i = 0; i<10;i++){
+    for(int i = 0; i<bonker_count;i++){
         if(!table.bonkers[i].active)
             return;
         rafgl_raster_draw_spritesheet(&raster,&bonk_spreadsheet,(int)frame % 4,0,table.bonkers[i].pos.x, table.bonkers[i].pos.y);
@@ -200,16 +216,27 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
             return;
         }
     }
-
+    
+    vec2_t center = vec2(table.width*0.5,table.width*0.5);
+    for(int y =0 ;y < size_height; y++)
+    {
+        float v = 1.0f * y / table.height;
+        for(int x =0 ;x < size_width; x++)
+        {
+            float u = 1.0f * x / table.width;
+            //pixel_at_m(raster,x,y) = rafgl_bilinear_sample(&raster,u,v);
+            //pixel_at_m(raster,x,y) = rafgl_point_sample(&raster,u*frame,v*frame);
+        } 
+    }
     move_bonkers(&table,delta_time);
 }
 
 void main_state_render(GLFWwindow *window, void *args)
 {
-    if(table.gameOver)
-        rafgl_texture_load_from_raster(&texture,&game_over_raster);
-    else
+    if(table.gameOver == 0)
         rafgl_texture_load_from_raster(&texture,&raster);
+    else if(table.gameOver++ ==1)
+        rafgl_texture_load_from_raster(&texture,&game_over_rasters[rand()%4]);
     
     rafgl_texture_show(&texture,0);
 }
