@@ -104,8 +104,8 @@ void bonker_int(table_t * table,bonker_t * bonker)
     bonker->width=120;
     bonker->pos.x = 1;//rand() % (table->width - bonker->width);
     bonker->pos.y = 1;//rand() % (table->height - bonker->height);
-    bonker->mov.x = 4 +randf()*12;
-    bonker->mov.y = 4 + randf()*12;
+    bonker->mov.x = 4 + randf()*14;
+    bonker->mov.y = 4 + randf()*14;
 }
 
 void table_init(table_t* table, int width, int height)
@@ -216,16 +216,29 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
             return;
         }
     }
-    
-    vec2_t center = vec2(table.width*0.5,table.width*0.5);
+    rafgl_raster_copy(&result_raster, &raster);
+    vec2_t center = vec2(game_data->mouse_pos_x, game_data->mouse_pos_y);//vec2(table.width*0.5,table.width*0.5);
+    float maxr = rafgl_distance2D(0,0,center.x,center.y);
+    if(maxr < rafgl_distance2D(0,table.height,center.x,center.y)) maxr = rafgl_distance2D(0,table.height,center.x,center.y);
+    if(maxr < rafgl_distance2D(table.width,0,center.x,center.y)) maxr = rafgl_distance2D(table.width,0,center.x,center.y);
+    if(maxr < rafgl_distance2D(table.width,table.height,center.x,center.y)) maxr = rafgl_distance2D(table.width,table.height,center.x,center.y);
+    maxr *= 0.9;
     for(int y =0 ;y < size_height; y++)
     {
         float v = 1.0f * y / table.height;
         for(int x =0 ;x < size_width; x++)
         {
+            vec2_t pos = vec2(x,y);
             float u = 1.0f * x / table.width;
-            //pixel_at_m(raster,x,y) = rafgl_bilinear_sample(&raster,u,v);
-            //pixel_at_m(raster,x,y) = rafgl_point_sample(&raster,u*frame,v*frame);
+            float alpha = vec2_angle(vec2_sub(pos,center));
+            float r = rafgl_distance2D(x,y,center.x,center.y);
+            float rnorm = r / maxr;
+            r = rnorm * r;
+
+            u = (center.x + cosf(alpha) *r) / table.width;
+            v = (center.y + sinf(alpha) *r) / table.height;
+
+            pixel_at_m(raster,x,y) = rafgl_point_sample(&result_raster,u,v);
         } 
     }
     move_bonkers(&table,delta_time);
