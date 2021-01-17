@@ -145,6 +145,9 @@ static rafgl_meshPUN_t mesh;
 static shader_data_t shad;
 static portal_t portal;
 
+static rafgl_raster_t doge_raster;
+static rafgl_texture_t doge_tex;
+
 void main_state_init(GLFWwindow *window, void *args, int width, int height)
 {
     rafgl_log_fps(RAFGL_TRUE);
@@ -157,6 +160,23 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     shader_init(&shad, "v8PVD");
 
     portal_init(&portal,1,2);
+
+
+    rafgl_raster_load_from_image(&doge_raster, "res/images/img.png");
+
+    /* rezervisemo texture slot.  */
+    rafgl_texture_init(&doge_tex);
+    rafgl_texture_load_from_raster(&doge_tex, &doge_raster);
+    glBindTexture(GL_TEXTURE_2D, doge_tex.tex_id); /* bajndujemo doge teksturu */
+    /*  Filtriranje teksture, za slucaj umanjenja (MIN) i uvecanja (MAG)  */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    /*  Sta raditi ako su UV koordinate van 0-1 opsega? Ograniciti na ivicu (CLAMP) ili ponavljati (REPEAT) */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0); /* unbajndujemo doge teksturu */
+
+
 
     glClearColor(0.0f, 0.5f, 0.5f, 1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -246,6 +266,9 @@ void main_state_render(GLFWwindow *window, void *args)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shad.shader);
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, doge_tex.tex_id);
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
