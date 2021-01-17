@@ -26,7 +26,7 @@ float time = 0.0f;
 int reshow_cursor_flag = 0;
 int last_lmb = 0;
 
-mat4_t model, view, projection, view_projection;
+mat4_t view, projection, view_projection;
 
 typedef struct shader_data
 {
@@ -67,6 +67,8 @@ typedef struct Portal
 {
     vertex_t vertices[6];
     GLuint vao, vbo;
+    mat4_t model_portal1;
+    mat4_t model_portal2;
 } portal_t;
 
 void portal_init(portal_t * portal, float width, float height)
@@ -182,9 +184,11 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     glEnable(GL_DEPTH_TEST);
 
     light_direction = v3_norm(light_direction);
-    model =  m4_identity();// m4_translation(vec3(2,-4,-4));
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    portal.model_portal1 =  m4_identity();// m4_translation(vec3(2,-4,-4));
+    portal.model_portal2 =  m4_translation(vec3(2,0,-10)); //m4_mul(m4_rotation_x(M_PIf  / 2),);
+    portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(M_PIf));
+//    glEnable(GL_CULL_FACE);
+//    glCullFace(GL_BACK);
 }
 
 void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *game_data, void *args)
@@ -258,6 +262,8 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
 
     //model2 = m4_mul(model2, m4_rotation_z(1.0f * delta_time));
 
+    //portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(1.0f * delta_time));
+
     view_projection = m4_mul(projection, view);
 
 }
@@ -287,7 +293,10 @@ void main_state_render(GLFWwindow *window, void *args)
 //    glUniform3f(uni_ambient[current_shader], ambient.x, ambient.y, ambient.z);
 //    glUniform3f(uni_camera_position[current_shader], camera_position.x, camera_position.y, camera_position.z);
 
-    shader_update(&shad,model);
+    shader_update(&shad,portal.model_portal1);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    shader_update(&shad,portal.model_portal2);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindVertexArray(0);
