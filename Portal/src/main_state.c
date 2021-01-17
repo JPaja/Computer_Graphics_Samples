@@ -27,6 +27,7 @@ int reshow_cursor_flag = 0;
 int last_lmb = 0;
 
 mat4_t view, projection, view_projection;
+mat4_t objects[10];
 
 typedef struct shader_data
 {
@@ -145,6 +146,7 @@ void shader_update(shader_data_t * shader_data, mat4_t model)
 }
 static rafgl_meshPUN_t mesh;
 static shader_data_t shad;
+static shader_data_t shad2;
 static portal_t portal;
 
 static rafgl_raster_t doge_raster;
@@ -157,9 +159,10 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 
 
     rafgl_meshPUN_init(&mesh);
-    rafgl_meshPUN_load_from_OBJ(&mesh, "res/models/portal.obj");
+    rafgl_meshPUN_load_from_OBJ(&mesh, "res/models/monkey.obj");
 
     shader_init(&shad, "v8PVD");
+    //shader_init(&shad2, "v8PVD2");
 
     portal_init(&portal,1,2);
 
@@ -187,6 +190,14 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     portal.model_portal1 =  m4_identity();// m4_translation(vec3(2,-4,-4));
     portal.model_portal2 =  m4_translation(vec3(2,0,-10)); //m4_mul(m4_rotation_x(M_PIf  / 2),);
     portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(M_PIf));
+
+    float add_angle = 2 * M_PIf / 10;
+    float angle = 0;
+    float radius = 10;
+    for(int i = 0;  i < 10; i++, angle += add_angle)
+    {
+        objects[i] = m4_translation(vec3(radius *  cos(angle),0,radius * -cos(angle)));
+    }
 //    glEnable(GL_CULL_FACE);
 //    glCullFace(GL_BACK);
 }
@@ -284,20 +295,19 @@ void main_state_render(GLFWwindow *window, void *args)
 
     glBindVertexArray(portal.vao);
 
-//    glUniformMatrix4fv(uni_M[current_shader], 1, GL_FALSE, (void*) model.m);
-//    glUniformMatrix4fv(uni_VP[current_shader], 1, GL_FALSE, (void*) view_projection.m);
-//
-//    glUniform3f(uni_object_colour[current_shader], object_colour.x, object_colour.y, object_colour.z);
-//    glUniform3f(uni_light_colour[current_shader], light_colour.x, light_colour.y, light_colour.z);
-//    glUniform3f(uni_light_direction[current_shader], light_direction.x, light_direction.y, light_direction.z);
-//    glUniform3f(uni_ambient[current_shader], ambient.x, ambient.y, ambient.z);
-//    glUniform3f(uni_camera_position[current_shader], camera_position.x, camera_position.y, camera_position.z);
-
     shader_update(&shad,portal.model_portal1);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     shader_update(&shad,portal.model_portal2);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    //glUseProgram(shad2.shader);
+    for(int i = 0; i < 10; i++)
+    {
+        //shader_update(&shad2,objects[i]);
+        //glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+
 
     glBindVertexArray(0);
     glDisableVertexAttribArray(4);
