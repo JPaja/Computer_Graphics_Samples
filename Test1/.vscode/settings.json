@@ -12,6 +12,13 @@
         "utility": "cpp",
         "variant": "cpp",
         "random": "c",
-        "*.tcc": "c"
+        "*.tcc": "c",
+        "hash_map": "c",
+        "deque": "c",
+        "list": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "unordered_set": "c",
+        "vector": "c"
     }
 }

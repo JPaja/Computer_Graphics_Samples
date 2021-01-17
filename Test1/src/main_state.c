@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include <rafgl.h>
+#include <sys/cdefs.h>
 
 
 typedef struct vec2
@@ -206,10 +207,11 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
             pixel_at_m(raster,x,y) = colour;
         } 
     }
+    
     for(int i = 0; i<bonker_count;i++){
         if(!table.bonkers[i].active)
             return;
-        rafgl_raster_draw_spritesheet(&raster,&bonk_spreadsheet,(int)frame % 4,0,table.bonkers[i].pos.x, table.bonkers[i].pos.y);
+        rafgl_raster_draw_spritesheet(&raster,&bonk_spreadsheet,(int)(frame + i) % 4,0,table.bonkers[i].pos.x, table.bonkers[i].pos.y);
         if(bonker_colision(table.bonkers[i],game_data->mouse_pos_x,game_data->mouse_pos_y))
         {
             table.gameOver = 1;
