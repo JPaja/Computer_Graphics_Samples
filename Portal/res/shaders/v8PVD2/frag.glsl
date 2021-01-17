@@ -1,23 +1,20 @@
 #version 330
 
-in vec3 pass_colour;
-in vec2 pass_uv;
 in vec3 pass_normal;
 
 out vec4 final_colour;
 
-uniform sampler2D albedo;
+uniform vec3 uni_object_colour;
+uniform vec3 uni_light_colour;
+uniform vec3 uni_light_direction;
+uniform vec3 uni_ambient;
+
 
 void main()
 {
-	//vec3 normalized_normal = normalize(pass_normal);
-	//vec3 normalized_normal = normalize(pass_normal);
-
-//	// Uzimamo uzorak iz bajndovane teksture na koordinatama iz pass_uv i to
-//	// direktno upisujemo kao konacnu boju piksela
-	//vec4 albedo_colour = texture(albedo, pass_uv * 0.5 + vec2(0.25, 0.25));
-	final_colour = vec4(pass_colour,1.0f);
-
-	//final_colour = vec4(pass_colour,1.0f);
+	float light_factor = clamp(dot(normalize(pass_normal), normalize(uni_light_direction * (-1))), 0, 1);
+	vec3 fcolour = (uni_ambient * uni_object_colour) + (uni_object_colour * (uni_light_colour * light_factor));
+	fcolour = (pass_normal + vec3(1.0)) * 0.5;
+	final_colour = vec4(fcolour, 1.0f);
 	//final_colour = vec4(1.0f);
 }
