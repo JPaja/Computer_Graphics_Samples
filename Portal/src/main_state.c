@@ -214,9 +214,11 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 
 mat4_t portal_view1()
 {   //mat4_torig_view, Mesh* src, Mesh* dst) {
-    mat4_t mv = m4_mul(view_projection, portal.model_portal1);
-    //mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
+    mat4_t mv = m4_mul(projection, portal.model_portal1);
     mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
+
+    //mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
+    //mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
             // 3. transformation from source portal to the camera - it's the
             //    first portal's ModelView matrix:
             // 2. object is front-facing, the camera is facing the other way:
@@ -229,7 +231,9 @@ mat4_t portal_view1()
 
 mat4_t portal_view2()
 {   //mat4_torig_view, Mesh* src, Mesh* dst) {
-    mat4_t mv = m4_mul(view_projection, portal.model_portal2);
+    mat4_t proj = projection;
+
+    mat4_t mv = m4_mul(proj, portal.model_portal2);
     //mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
     mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
     // 3. transformation from source portal to the camera - it's the
@@ -359,7 +363,7 @@ void main_state_render(GLFWwindow *window, void *args)
 
     glBindVertexArray(portal.vao);
 
-    shader_update(&shad,portal.model_portal1,view_projection);
+    shader_update(&shad,portal.model_portal2,view_projection);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo_id);
@@ -370,7 +374,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < objects_len; i++)
     {
-        shader_update(&shad2,objects[i],portal_view1());
+        shader_update(&shad2,objects[i],portal_view2());
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
 
@@ -381,7 +385,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindTexture(GL_TEXTURE_2D, fbo.tex_id);
 
     glBindVertexArray(portal.vao);
-    shader_update(&shad,portal.model_portal2,view_projection);
+    shader_update(&shad,portal.model_portal1,view_projection);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
