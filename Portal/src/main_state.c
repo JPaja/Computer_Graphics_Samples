@@ -328,16 +328,9 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 }
 
 
-mat4_t portal_view1()
+mat4_t portal_view(mat4_t model)
 {
-    mat4_t mv = m4_mul(projection, portal.model_portal1);
-    return mv;
-}
-
-mat4_t portal_view2()
-{
-    mat4_t mv = m4_mul(projection, portal.model_portal2);
-    //mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
+    mat4_t mv = m4_mul(projection, model);
     return mv;
 }
 
@@ -450,7 +443,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < objects_len; i++)
     {
-        shader_update(&shad2,objects[i],portal_view2());
+        shader_update(&shad2,objects[i],portal_view(portal.model_portal2));
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
 
@@ -488,7 +481,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < objects_len; i++)
     {
-        shader_update(&shad2,objects[i],portal_view1());
+        shader_update(&shad2,objects[i],portal_view(portal.model_portal1));
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
 
