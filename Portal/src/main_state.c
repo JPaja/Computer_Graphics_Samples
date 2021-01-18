@@ -242,7 +242,7 @@ mat4_t portal_view2()
     //    transformations are reversed compared to object
     //    transformations:
     //* glm::inverse(dst->object2world)
-    return portal_cam;
+    return mv;
 }
 
 void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *game_data, void *args)
