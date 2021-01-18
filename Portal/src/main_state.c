@@ -55,6 +55,8 @@ typedef struct shader_data
     GLuint uni_light_direction;
     GLuint uni_ambient;
     GLuint uni_camera_position;
+    GLuint uni_V;
+    GLuint uni_P;
     const char * shader_name;
 }shader_data_t;
 
@@ -96,6 +98,7 @@ typedef struct Tiles
     float r;
     mat4_t models[100][100];
 } tiles_t;
+
 
 void portal_init(portal_t * portal,float width, float height)
 {
@@ -218,6 +221,8 @@ void shader_init(shader_data_t * shader_data, char * name)
     shader_data->uni_light_direction = glGetUniformLocation(shader, "uni_light_direction");
     shader_data->uni_ambient = glGetUniformLocation(shader, "uni_ambient");
     shader_data->uni_camera_position = glGetUniformLocation(shader, "uni_camera_position");
+    shader_data->uni_V = glGetUniformLocation(shader, "uni_V");
+    shader_data->uni_P = glGetUniformLocation(shader, "uni_P");
 }
 
 void shader_update(shader_data_t * shader_data, mat4_t model , mat4_t view_projection)
@@ -235,6 +240,7 @@ static rafgl_meshPUN_t mesh;
 static shader_data_t shad;
 static shader_data_t shad2;
 static shader_data_t shad3;
+static shader_data_t shad_skybox;
 static portal_t portal;
 static tiles_t tiles;
 
@@ -243,6 +249,9 @@ static rafgl_texture_t doge_tex;
 rafgl_framebuffer_simple_t fbo;
 rafgl_framebuffer_simple_t fbo2;
 rafgl_framebuffer_simple_t fbo3;
+static rafgl_texture_t skybox;
+static rafgl_meshPUN_t skybox_mesh;
+
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height)
 {
@@ -266,6 +275,10 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
+    rafgl_texture_load_cubemap_named(&skybox,"sky","jpg");
+    rafgl_meshPUN_init(&skybox_mesh);
+    rafgl_meshPUN_load_cube(&skybox_mesh, 1.0f);
+
     rafgl_log_fps(RAFGL_TRUE);
     object_colour = vec3(0.8f, 0.40f, 0.0f);
 
@@ -276,6 +289,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     shader_init(&shad, "v8PVD");
     shader_init(&shad2, "v8PVD2");
     shader_init(&shad3, "PostProcess");
+    shader_init(&shad_skybox, "skyboxShader");
 
     portal_init(&portal,1,2);
     tiles_init(&tiles);
@@ -443,6 +457,19 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindFramebuffer(GL_FRAMEBUFFER, fbo2.fbo_id);
     glClearColor(0.0f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glDepthMask(GL_FALSE);
+
+    glUseProgram(shad_skybox.shader);
+    glUniformMatrix4fv(shad_skybox.uni_V,1,GL_FALSE,(void*)view.m);
+    glUniformMatrix4fv(shad_skybox.uni_P,1,GL_FALSE,(void*)projection.m);
+
+    glBindVertexArray(skybox_mesh.vao_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP,skybox.tex_id);
+    glDrawArrays(GL_TRIANGLES, 0, skybox_mesh.vertex_count);
+
+    glDepthMask(GL_TRUE);
+
 
     glUseProgram(shad.shader);
     glEnable(GL_TEXTURE_2D);
