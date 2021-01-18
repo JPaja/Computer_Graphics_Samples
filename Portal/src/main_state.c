@@ -399,7 +399,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < objects_len; i++)
     {
-        shader_update(&shad2,objects[i],portal_view1());
+        shader_update(&shad2,objects[i],portal_view2());
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
 
@@ -424,7 +424,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < objects_len; i++)
     {
-        shader_update(&shad2,objects[i],portal_view2());
+        shader_update(&shad2,objects[i],portal_view1());
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
 
