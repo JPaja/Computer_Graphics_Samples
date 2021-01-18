@@ -28,6 +28,7 @@ int last_lmb = 0;
 
 mat4_t view, projection, view_projection;
 mat4_t objects[10];
+float object_movement[10];
 
 typedef struct shader_data
 {
@@ -198,6 +199,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     {
         objects[i] = m4_translation(vec3(radius *  cos(angle),0,radius * sin(angle)));
         objects[i] = m4_mul(objects[i],m4_rotation_y(angle));
+        object_movement[i] = 0.05f;
     }
     //objects[0] = m4_identity();
 //    glEnable(GL_CULL_FACE);
@@ -267,6 +269,15 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
     {
         view = m4_look_at(camera_position, vec3(0.0f, 0.0f, 0.0f), camera_up);
     }
+
+    for(int i = 0; i < 10; i++)
+    {
+        int y = objects[i].m31 += object_movement[i];
+        if(y > 2 || y < -2)
+            object_movement[i] *= -1;
+        objects[i] = m4_mul(objects[i], m4_rotation_y(1.0f * delta_time));
+    }
+
     //model
     //if(game_data->keys_down['B'])
     //model = m4_mul(model, m4_rotation_x(1.0f  * delta_time));
@@ -284,7 +295,7 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
 void main_state_render(GLFWwindow *window, void *args)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glUseProgram(shad.shader);
+    glUseProgram(shad.shader);
     glUseProgram(shad2.shader);
 
     //glEnable(GL_TEXTURE_2D);
@@ -293,8 +304,8 @@ void main_state_render(GLFWwindow *window, void *args)
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
-    //glEnableVertexAttribArray(3);
-    //glEnableVertexAttribArray(4);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
 
 //    glBindVertexArray(portal.vao);
 //
@@ -304,8 +315,7 @@ void main_state_render(GLFWwindow *window, void *args)
 //    shader_update(&shad,portal.model_portal2);
 //    glDrawArrays(GL_TRIANGLES, 0, 6);
 
-//    glDisableVertexAttribArray(4);
-//    glDisableVertexAttribArray(3);
+
 
 
     glBindVertexArray(mesh.vao_id);
@@ -316,7 +326,8 @@ void main_state_render(GLFWwindow *window, void *args)
     }
     glBindVertexArray(0);
 
-
+    glDisableVertexAttribArray(4);
+    glDisableVertexAttribArray(3);
     glDisableVertexAttribArray(2);
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(0);
