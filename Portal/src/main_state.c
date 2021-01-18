@@ -11,7 +11,7 @@ vec3_t ambient = RAFGL_GRAYX(0.16f);
 
 float fov = 90.0f;
 
-vec3_t camera_position = vec3m(0.0f, 0.0f, 3.5f);
+vec3_t camera_position = vec3m(0.0f, 0.0f, -4.0f);
 vec3_t camera_target = vec3m(0.0f, 0.0f, 0.0f);
 vec3_t camera_up = vec3m(0.0f, 1.0f, 0.0f);
 vec3_t aim_dir = vec3m(0.0f, 0.0f, -1.0f);
@@ -75,8 +75,18 @@ typedef struct Portal
     mat4_t model_portal2;
 } portal_t;
 
-void portal_init(portal_t * portal, float width, float height)
+typedef struct Tiles
 {
+    vertex_t vertices[6];
+    GLuint vao, vbo;
+    int m,n;
+    float r;
+    mat4_t models[100][100];
+} tiles_t;
+
+void portal_init(portal_t * portal,float width, float height)
+{
+
     portal->vertices[0] = vertex(vec3( -1.0f * width, 1.0f * height, 0.0f), RAFGL_RED, 1.0f, 0.0f, 0.0f, RAFGL_VEC3_NEGZ);
     portal->vertices[1] = vertex(vec3( -1.0f * width, -1.0f * height, 0.0f), RAFGL_GREEN, 1.0f, 0.0f, 1.0f, RAFGL_VEC3_NEGZ);
     portal->vertices[2] = vertex(vec3(  1.0f * width, 1.0f * height, 0.0f), RAFGL_GREEN, 1.0f, 1.0f, 0.0f, RAFGL_VEC3_NEGZ);
@@ -117,8 +127,67 @@ void portal_init(portal_t * portal, float width, float height)
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    portal->model_portal1 =  m4_identity();// m4_translation(vec3(2,-4,-4));
+    portal->model_portal2 =  m4_translation(vec3(2,0,-6)); //m4_mul(m4_rotation_x(M_PIf  / 2),);
+    //portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(M_PIf));
 }
 
+
+void tiles_init(tiles_t * tile)
+{
+    tile->m = 10;
+    tile->n = 10;
+    tile->r =1;
+
+    tile->vertices[0] = vertex(vec3( -1.0f * tile->r, 1.0f * tile->r, 0.0f), RAFGL_RED, 1.0f, 0.0f, 0.0f, RAFGL_VEC3_NEGZ);
+    tile->vertices[1] = vertex(vec3( -1.0f * tile->r, -1.0f * tile->r, 0.0f), RAFGL_GREEN, 1.0f, 0.0f, 1.0f, RAFGL_VEC3_NEGZ);
+    tile->vertices[2] = vertex(vec3(  1.0f * tile->r, 1.0f * tile->r, 0.0f), RAFGL_GREEN, 1.0f, 1.0f, 0.0f, RAFGL_VEC3_NEGZ);
+
+    tile->vertices[3] = vertex(vec3(  1.0f * tile->r, 1.0f * tile->r, 0.0f), RAFGL_GREEN, 1.0f, 1.0f, 0.0f, RAFGL_VEC3_NEGZ);
+    tile->vertices[4] = vertex(vec3( -1.0f * tile->r, -1.0f * tile->r, 0.0f), RAFGL_GREEN, 1.0f, 0.0f, 1.0f, RAFGL_VEC3_NEGZ);
+    tile->vertices[5] = vertex(vec3(  1.0f * tile->r, -1.0f * tile->r, 0.0f), RAFGL_BLUE, 1.0f, 1.0f, 1.0f, RAFGL_VEC3_NEGZ);
+
+
+    glGenVertexArrays(1, &tile->vao);
+    glGenBuffers(1, &tile->vbo);
+
+    glBindVertexArray(tile->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, tile->vbo);
+
+    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(vertex_t), tile->vertices, GL_STATIC_DRAW);
+
+    /* position */
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
+
+    /* colour */
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (sizeof(vec3_t)));
+
+    /* alpha */
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (2 * sizeof(vec3_t)));
+
+    /* UV coords */
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (2 * sizeof(vec3_t) + 1 * sizeof(float)));
+
+    /* normal */
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (2 * sizeof(vec3_t) + 3 * sizeof(float)));
+
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    for(int i = 0; i< tile->m; i++)
+        for(int j = 0; j< tile->n; j++)
+        {
+            tile->models[i][j] =  m4_mul(m4_translation(vec3(i,-3,-j)),m4_rotation_x(M_PIf/2));
+        }
+
+}
 
 
 void shader_init(shader_data_t * shader_data, char * name)
@@ -151,6 +220,7 @@ static rafgl_meshPUN_t mesh;
 static shader_data_t shad;
 static shader_data_t shad2;
 static portal_t portal;
+static tiles_t tiles;
 
 static rafgl_raster_t doge_raster;
 static rafgl_texture_t doge_tex;
@@ -171,9 +241,9 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     shader_init(&shad2, "v8PVD2");
 
     portal_init(&portal,1,2);
+    tiles_init(&tiles);
 
-
-    rafgl_raster_load_from_image(&doge_raster, "res/images/img.png");
+    rafgl_raster_load_from_image(&doge_raster, "res/images/img_1.png");
 
     /* rezervisemo texture slot.  */
     rafgl_texture_init(&doge_tex);
@@ -193,9 +263,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     glEnable(GL_DEPTH_TEST);
 
     light_direction = v3_norm(light_direction);
-    portal.model_portal1 =  m4_identity();// m4_translation(vec3(2,-4,-4));
-    portal.model_portal2 =  m4_translation(vec3(2,0,-6)); //m4_mul(m4_rotation_x(M_PIf  / 2),);
-    //portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(M_PIf));
+
 
     float add_angle = 2 * M_PIf / 10;
     float angle = M_PIf * 1.5;
@@ -206,42 +274,19 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
         objects[i] = m4_mul(objects[i],m4_rotation_y(angle));
         object_movement[i] = i * 0.01f;
     }
-    //objects[0] = m4_identity();
-//    glEnable(GL_CULL_FACE);
-//    glCullFace(GL_BACK);
 }
 
 
 mat4_t portal_view1()
-{   //mat4_torig_view, Mesh* src, Mesh* dst) {
+{
     mat4_t mv = m4_mul(projection, portal.model_portal1);
-    //mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
-
-    //mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
-            // 3. transformation from source portal to the camera - it's the
-            //    first portal's ModelView matrix:
-            // 2. object is front-facing, the camera is facing the other way:
-            // 1. go the destination portal; using inverse, because camera
-            //    transformations are reversed compared to object
-            //    transformations:
-            //* glm::inverse(dst->object2world)
     return mv;
 }
 
 mat4_t portal_view2()
-{   //mat4_torig_view, Mesh* src, Mesh* dst) {
-    mat4_t proj = projection;
-
-    mat4_t mv = m4_mul(proj, portal.model_portal2);
-    //mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
-    mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
-    // 3. transformation from source portal to the camera - it's the
-    //    first portal's ModelView matrix:
-    // 2. object is front-facing, the camera is facing the other way:
-    // 1. go the destination portal; using inverse, because camera
-    //    transformations are reversed compared to object
-    //    transformations:
-    //* glm::inverse(dst->object2world)
+{
+    mat4_t mv = m4_mul(projection, portal.model_portal2);
+    //mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
     return mv;
 }
 
@@ -317,6 +362,12 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
         objects[i] = m4_mul(objects[i], m4_rotation_y(1.0f * delta_time));
     }
 
+    if(game_data->keys_down['H']) portal.model_portal1.m30 += 0.1f;
+    if(game_data->keys_down['J']) portal.model_portal1.m30 += -0.1f;
+
+    if(game_data->keys_down['K']) portal.model_portal2.m30 += 0.1f;
+    if(game_data->keys_down['L']) portal.model_portal2.m30 += -0.1f;
+
     //model
     //if(game_data->keys_down['B'])
     //model = m4_mul(model, m4_rotation_x(1.0f  * delta_time));
@@ -382,12 +433,13 @@ void main_state_render(GLFWwindow *window, void *args)
     glUseProgram(shad.shader);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, fbo.tex_id);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_CLAMP_TO_EDGE);
 
     glBindVertexArray(portal.vao);
     shader_update(&shad,portal.model_portal1,view_projection);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
 
 
     glUseProgram(shad2.shader);
@@ -397,6 +449,24 @@ void main_state_render(GLFWwindow *window, void *args)
     {
         shader_update(&shad2,objects[i],view_projection);
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
+    }
+
+
+    glUseProgram(shad.shader);
+    //glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,  doge_tex.tex_id);//doge_tex.tex_id);
+
+    glBindVertexArray(tiles.vao);
+    for(int i = 0; i< tiles.m; i++)
+        for(int j = 0; j< tiles.n; j++)
+        {
+            shader_update(&shad, tiles.models[i][j], view_projection);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
+    for(int i = 0; i < objects_len; i++)
+    {
+
     }
 
 
