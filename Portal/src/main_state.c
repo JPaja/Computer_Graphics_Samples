@@ -204,7 +204,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     {
         objects[i] = m4_translation(vec3(radius *  cos(angle),(i - 5) / 2.0f,radius * sin(angle)));
         objects[i] = m4_mul(objects[i],m4_rotation_y(angle));
-        //object_movement[i] = i * 0.01f;
+        object_movement[i] = i * 0.01f;
     }
     //objects[0] = m4_identity();
 //    glEnable(GL_CULL_FACE);
@@ -215,9 +215,8 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 mat4_t portal_view1()
 {   //mat4_torig_view, Mesh* src, Mesh* dst) {
     mat4_t mv = m4_mul(projection, portal.model_portal1);
-    mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
+    //mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
 
-    //mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
     //mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
             // 3. transformation from source portal to the camera - it's the
             //    first portal's ModelView matrix:
@@ -226,7 +225,7 @@ mat4_t portal_view1()
             //    transformations are reversed compared to object
             //    transformations:
             //* glm::inverse(dst->object2world)
-    return portal_cam;
+    return mv;
 }
 
 mat4_t portal_view2()

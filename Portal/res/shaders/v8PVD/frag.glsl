@@ -15,7 +15,8 @@ void main()
 
 //	// Uzimamo uzorak iz bajndovane teksture na koordinatama iz pass_uv i to
 //	// direktno upisujemo kao konacnu boju piksela
-	vec4 albedo_colour = texture(albedo, pass_uv * 0.5 + vec2(0.25, 0.25));
+	vec2 a = (pass_uv * 0.5 + vec2(0.25, 0.25));
+	vec4 albedo_colour = texture(albedo,vec2(  a.x, -1 *a.y));
 	final_colour = albedo_colour;
 
 	//final_colour = vec4(pass_colour,1.0f);
