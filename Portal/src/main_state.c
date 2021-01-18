@@ -134,7 +134,7 @@ void shader_init(shader_data_t * shader_data, char * name)
     shader_data->uni_camera_position = glGetUniformLocation(shader, "uni_camera_position");
 }
 
-void shader_update(shader_data_t * shader_data, mat4_t model)
+void shader_update(shader_data_t * shader_data, mat4_t model , mat4_t view_projection)
 {
     glUniformMatrix4fv(shader_data->uni_M, 1, GL_FALSE, (void*) model.m);
     glUniformMatrix4fv(shader_data->uni_VP, 1, GL_FALSE, (void*) view_projection.m);
@@ -313,6 +313,8 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
 void main_state_render(GLFWwindow *window, void *args)
 {
     glad_glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo_id);
+
+    glClearColor(0.0f, 0.f, 0.f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -327,12 +329,12 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < 10; i++)
     {
-        shader_update(&shad2,objects[i]);
+        shader_update(&shad2,objects[i],portal_view());
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
-    glBindVertexArray(0);
 
     glad_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.0f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(shad.shader);
@@ -344,14 +346,25 @@ void main_state_render(GLFWwindow *window, void *args)
 
 
     mat4_t portal1_view = portal_view();
-    shader_update(&shad,portal.model_portal1);
+    shader_update(&shad,portal.model_portal1,view_projection);
     glUniformMatrix4fv(shad.uni_VP, 1, GL_FALSE, (void*) portal1_view.m);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    shader_update(&shad,portal.model_portal2);
+    shader_update(&shad,portal.model_portal2,view_projection);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
+    glUseProgram(shad2.shader);
+
+    glBindVertexArray(mesh.vao_id);
+    for(int i = 0; i < 10; i++)
+    {
+        shader_update(&shad2,objects[i],view_projection);
+        glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
+    }
+
+
+    glBindVertexArray(0);
 
     glDisableVertexAttribArray(4);
     glDisableVertexAttribArray(3);
