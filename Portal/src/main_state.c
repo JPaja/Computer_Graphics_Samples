@@ -225,10 +225,12 @@ static tiles_t tiles;
 static rafgl_raster_t doge_raster;
 static rafgl_texture_t doge_tex;
 rafgl_framebuffer_simple_t fbo;
+rafgl_framebuffer_simple_t fbo2;
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height)
 {
     fbo = rafgl_framebuffer_simple_create(width,height);
+    fbo2 = rafgl_framebuffer_simple_create(width,height);
 
     rafgl_log_fps(RAFGL_TRUE);
     object_colour = vec3(0.8f, 0.40f, 0.0f);
@@ -384,7 +386,7 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
 
 void main_state_render(GLFWwindow *window, void *args)
 {
-    glad_glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo_id);
     glClearColor(0.0f, 0.f, 0.f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -403,7 +405,7 @@ void main_state_render(GLFWwindow *window, void *args)
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
 
-    glad_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo2.fbo_id);
     glClearColor(0.0f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -428,7 +430,7 @@ void main_state_render(GLFWwindow *window, void *args)
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo2.fbo_id);
 
     glUseProgram(shad.shader);
     glEnable(GL_TEXTURE_2D);
@@ -469,6 +471,15 @@ void main_state_render(GLFWwindow *window, void *args)
 
     }
 
+
+    //draw fbo
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo2.fbo_id);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720,
+                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glBindVertexArray(0);
 
