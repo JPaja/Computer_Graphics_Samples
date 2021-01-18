@@ -195,7 +195,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     light_direction = v3_norm(light_direction);
     portal.model_portal1 =  m4_identity();// m4_translation(vec3(2,-4,-4));
     portal.model_portal2 =  m4_translation(vec3(2,0,-6)); //m4_mul(m4_rotation_x(M_PIf  / 2),);
-    portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(M_PIf));
+    //portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(M_PIf));
 
     float add_angle = 2 * M_PIf / 10;
     float angle = M_PIf * 1.5;
@@ -212,7 +212,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 }
 
 
-mat4_t portal_view()
+mat4_t portal_view1()
 {   //mat4_torig_view, Mesh* src, Mesh* dst) {
     mat4_t mv = m4_mul(view_projection, portal.model_portal1);
     //mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
@@ -224,6 +224,21 @@ mat4_t portal_view()
             //    transformations are reversed compared to object
             //    transformations:
             //* glm::inverse(dst->object2world)
+    return portal_cam;
+}
+
+mat4_t portal_view2()
+{   //mat4_torig_view, Mesh* src, Mesh* dst) {
+    mat4_t mv = m4_mul(view_projection, portal.model_portal2);
+    //mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
+    mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
+    // 3. transformation from source portal to the camera - it's the
+    //    first portal's ModelView matrix:
+    // 2. object is front-facing, the camera is facing the other way:
+    // 1. go the destination portal; using inverse, because camera
+    //    transformations are reversed compared to object
+    //    transformations:
+    //* glm::inverse(dst->object2world)
     return portal_cam;
 }
 
@@ -332,7 +347,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < objects_len; i++)
     {
-        shader_update(&shad2,objects[i],portal_view());
+        shader_update(&shad2,objects[i],portal_view1());
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
     }
 
@@ -348,9 +363,7 @@ void main_state_render(GLFWwindow *window, void *args)
 
 
 
-    mat4_t portal1_view = portal_view();
     shader_update(&shad,portal.model_portal1,view_projection);
-    glUniformMatrix4fv(shad.uni_VP, 1, GL_FALSE, (void*) portal1_view.m);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     shader_update(&shad,portal.model_portal2,view_projection);
