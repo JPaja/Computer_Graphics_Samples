@@ -28,6 +28,19 @@ int last_lmb = 0;
 
 mat4_t view, projection, view_projection;
 
+GLuint  quad_vao,quad_vbo;
+GLfloat quad_vertices[] =
+{
+    1.0f , 1.0f,  0.0f,  1.0f, 1.0f,
+    -1.0f , 1.0f,  0.0f,  0.0f, 1.0f,
+    -1.0f , -1.0f,  0.0f,  0.0f, 0.0f,
+
+    1.0f , 1.0f,  0.0f,  1.0f, 1.0f,
+    -1.0f , -1.0f,  0.0f,  0.0f, 0.0f,
+    1.0f , -1.0f,  0.0f,  1.0f, 0.0f,
+};
+
+
 #define  objects_len 3
 mat4_t objects[objects_len];
 float object_movement[objects_len];
@@ -136,6 +149,8 @@ void portal_init(portal_t * portal,float width, float height)
 
 void tiles_init(tiles_t * tile)
 {
+
+
     tile->m = 10;
     tile->n = 10;
     tile->r =1;
@@ -219,6 +234,7 @@ void shader_update(shader_data_t * shader_data, mat4_t model , mat4_t view_proje
 static rafgl_meshPUN_t mesh;
 static shader_data_t shad;
 static shader_data_t shad2;
+static shader_data_t shad3;
 static portal_t portal;
 static tiles_t tiles;
 
@@ -226,11 +242,29 @@ static rafgl_raster_t doge_raster;
 static rafgl_texture_t doge_tex;
 rafgl_framebuffer_simple_t fbo;
 rafgl_framebuffer_simple_t fbo2;
+rafgl_framebuffer_simple_t fbo3;
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height)
 {
     fbo = rafgl_framebuffer_simple_create(width,height);
     fbo2 = rafgl_framebuffer_simple_create(width,height);
+    fbo3 = rafgl_framebuffer_simple_create(width,height);
+
+
+    glGenVertexArrays(1,&quad_vao);
+    glGenBuffers(1, &quad_vbo);
+    glBindVertexArray(quad_vao);
+    glBindBuffer(GL_ARRAY_BUFFER,quad_vbo);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(quad_vertices),quad_vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,5*sizeof(GLfloat),(void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,5*sizeof(GLfloat),(void*)(3*sizeof(GLfloat)));
+    //glDisableVertexAttribArray(1);
+    //glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 
     rafgl_log_fps(RAFGL_TRUE);
     object_colour = vec3(0.8f, 0.40f, 0.0f);
@@ -241,6 +275,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 
     shader_init(&shad, "v8PVD");
     shader_init(&shad2, "v8PVD2");
+    shader_init(&shad3, "PostProcess");
 
     portal_init(&portal,1,2);
     tiles_init(&tiles);
@@ -466,14 +501,30 @@ void main_state_render(GLFWwindow *window, void *args)
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-    for(int i = 0; i < objects_len; i++)
-    {
+    glBindTexture(GL_TEXTURE_2D,0);
 
-    }
+    glDisableVertexAttribArray(4);
+    glDisableVertexAttribArray(3);
+    glDisableVertexAttribArray(2);
 
 
+    glBindVertexArray(quad_vao);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo3.fbo_id);
+    glClearColor(0.0f, 0.f, 0.f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0,0,1280, 720);
+    glUseProgram(shad3.shader);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fbo2.tex_id);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    //glActiveTexture(GL_TEXTURE1);
+    //GLint var = glad_glGetUniformLocation(shad3.shader, "albedo");
+    //glUniform1i(var, 0);
+
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     //draw fbo
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo2.fbo_id);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo3.fbo_id);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720,
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -483,9 +534,6 @@ void main_state_render(GLFWwindow *window, void *args)
 
     glBindVertexArray(0);
 
-    glDisableVertexAttribArray(4);
-    glDisableVertexAttribArray(3);
-    glDisableVertexAttribArray(2);
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(0);
 
