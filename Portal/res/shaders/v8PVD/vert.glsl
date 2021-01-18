@@ -28,8 +28,8 @@ void main()
 
 //	float light_factor = clamp(dot(normalize((uni_M * vec4(normal, 0.0)).xyz), normalize(uni_light_direction * (-1))), 0, 1);
 //    pass_colour = (uni_ambient * uni_object_colour) + (uni_object_colour * (uni_light_colour * light_factor));
-	//pass_colour = gl_Position.xyz;
-	pass_colour = colour;
+	pass_colour = gl_Position.xyz;
+	//pass_colour = colour;
 
 	pass_uv = uv;
 	pass_normal = (uni_M * vec4(normal, 0.0)).xyz;

@@ -152,9 +152,12 @@ static portal_t portal;
 
 static rafgl_raster_t doge_raster;
 static rafgl_texture_t doge_tex;
+rafgl_framebuffer_simple_t fbo;
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height)
 {
+    fbo = rafgl_framebuffer_simple_create(width,height);
+
     rafgl_log_fps(RAFGL_TRUE);
     object_colour = vec3(0.8f, 0.40f, 0.0f);
 
@@ -204,6 +207,21 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     //objects[0] = m4_identity();
 //    glEnable(GL_CULL_FACE);
 //    glCullFace(GL_BACK);
+}
+
+
+mat4_t portal_view()
+{   //mat4_torig_view, Mesh* src, Mesh* dst) {
+    mat4_t mv = m4_mul(view_projection, portal.model_portal1);
+    mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
+            // 3. transformation from source portal to the camera - it's the
+            //    first portal's ModelView matrix:
+            // 2. object is front-facing, the camera is facing the other way:
+            // 1. go the destination portal; using inverse, because camera
+            //    transformations are reversed compared to object
+            //    transformations:
+            //* glm::inverse(dst->object2world)
+    return portal_cam;
 }
 
 void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *game_data, void *args)
@@ -294,25 +312,15 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
 
 void main_state_render(GLFWwindow *window, void *args)
 {
+    glad_glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo_id);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shad.shader);
 
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, doge_tex.tex_id);
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
     glEnableVertexAttribArray(4);
-
-    glBindVertexArray(portal.vao);
-
-    shader_update(&shad,portal.model_portal1);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    shader_update(&shad,portal.model_portal2);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glUseProgram(shad2.shader);
 
@@ -324,6 +332,27 @@ void main_state_render(GLFWwindow *window, void *args)
     }
     glBindVertexArray(0);
 
+    glad_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(shad.shader);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, fbo.tex_id);
+
+    glBindVertexArray(portal.vao);
+
+
+
+    mat4_t portal1_view = portal_view();
+    shader_update(&shad,portal.model_portal1);
+    glUniformMatrix4fv(shad.uni_VP, 1, GL_FALSE, (void*) portal1_view.m);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    shader_update(&shad,portal.model_portal2);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+
     glDisableVertexAttribArray(4);
     glDisableVertexAttribArray(3);
     glDisableVertexAttribArray(2);
@@ -331,6 +360,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glDisableVertexAttribArray(0);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    glad_glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void main_state_cleanup(GLFWwindow *window, void *args)
