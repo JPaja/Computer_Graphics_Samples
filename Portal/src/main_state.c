@@ -331,7 +331,6 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
 void main_state_render(GLFWwindow *window, void *args)
 {
     glad_glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo_id);
-
     glClearColor(0.0f, 0.f, 0.f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -343,7 +342,6 @@ void main_state_render(GLFWwindow *window, void *args)
     glEnableVertexAttribArray(4);
 
     glUseProgram(shad2.shader);
-
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < objects_len; i++)
     {
@@ -361,13 +359,32 @@ void main_state_render(GLFWwindow *window, void *args)
 
     glBindVertexArray(portal.vao);
 
-
-
     shader_update(&shad,portal.model_portal1,view_projection);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo_id);
+    glClearColor(0.0f, 0.f, 0.f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(shad2.shader);
+    glBindVertexArray(mesh.vao_id);
+    for(int i = 0; i < objects_len; i++)
+    {
+        shader_update(&shad2,objects[i],portal_view1());
+        glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glUseProgram(shad.shader);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, fbo.tex_id);
+
+    glBindVertexArray(portal.vao);
     shader_update(&shad,portal.model_portal2,view_projection);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
 
 
     glUseProgram(shad2.shader);
