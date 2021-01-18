@@ -330,7 +330,13 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 
 mat4_t portal_view(mat4_t model)
 {
-    mat4_t mv = m4_mul(projection, model);
+    vec3_t morg = vec3(model.m30,model.m31,model.m32);
+    vec3_t view_vector = v3_add(morg, v3_muls(aim_dir ,-1));
+    mat4_t vie = m4_look_at(morg, view_vector , camera_up);
+
+    mat4_t proj = m4_mul(projection, vie);
+    //mat4_t proj = projection;
+    mat4_t mv = m4_mul(proj, model);
     return mv;
 }
 
