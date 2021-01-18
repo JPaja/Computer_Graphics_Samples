@@ -27,8 +27,10 @@ int reshow_cursor_flag = 0;
 int last_lmb = 0;
 
 mat4_t view, projection, view_projection;
-mat4_t objects[10];
-float object_movement[10];
+
+#define  objects_len 3
+mat4_t objects[objects_len];
+float object_movement[objects_len];
 
 typedef struct shader_data
 {
@@ -196,13 +198,13 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(M_PIf));
 
     float add_angle = 2 * M_PIf / 10;
-    float angle = 0;
+    float angle = M_PIf * 1.5;
     float radius = 15;
-    for(int i = 0;  i < 10; i++, angle += add_angle)
+    for(int i = 0;  i < objects_len; i++, angle += add_angle)
     {
-        objects[i] = m4_translation(vec3(radius *  cos(angle),0,radius * sin(angle)));
+        objects[i] = m4_translation(vec3(radius *  cos(angle),(i - 5) / 2.0f,radius * sin(angle)));
         objects[i] = m4_mul(objects[i],m4_rotation_y(angle));
-        object_movement[i] = 0.05f;
+        //object_movement[i] = i * 0.01f;
     }
     //objects[0] = m4_identity();
 //    glEnable(GL_CULL_FACE);
@@ -213,7 +215,8 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 mat4_t portal_view()
 {   //mat4_torig_view, Mesh* src, Mesh* dst) {
     mat4_t mv = m4_mul(view_projection, portal.model_portal1);
-    mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
+    //mat4_t portal_cam = m4_mul(mv, m4_rotation_y(M_PIf));
+    mat4_t portal_cam = m4_mul(mv, m4_rotation_z(M_PIf));
             // 3. transformation from source portal to the camera - it's the
             //    first portal's ModelView matrix:
             // 2. object is front-facing, the camera is facing the other way:
@@ -288,7 +291,7 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
         view = m4_look_at(camera_position, vec3(0.0f, 0.0f, 0.0f), camera_up);
     }
 
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < objects_len; i++)
     {
         int y = objects[i].m31 += object_movement[i];
         if(y > 2 || y < -2)
@@ -327,7 +330,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glUseProgram(shad2.shader);
 
     glBindVertexArray(mesh.vao_id);
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < objects_len; i++)
     {
         shader_update(&shad2,objects[i],portal_view());
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
@@ -357,7 +360,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glUseProgram(shad2.shader);
 
     glBindVertexArray(mesh.vao_id);
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < objects_len; i++)
     {
         shader_update(&shad2,objects[i],view_projection);
         glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
