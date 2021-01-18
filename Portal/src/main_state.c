@@ -121,7 +121,7 @@ void portal_init(portal_t * portal, float width, float height)
 
 void shader_init(shader_data_t * shader_data, char * name)
 {
-    rafgl_log(RAFGL_INFO, "Compiling shader_data: %s\n", name);
+    //rafgl_log(RAFGL_INFO, "Compiling shader_data: %s\n", name);
     GLuint shader = rafgl_program_create_from_name(name);
     shader_data->shader_name = name;
     shader_data->shader = shader;
@@ -162,7 +162,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     rafgl_meshPUN_init(&mesh);
     rafgl_meshPUN_load_from_OBJ(&mesh, "res/models/monkey.obj");
 
-    //shader_init(&shad, "v8PVD");
+    shader_init(&shad, "v8PVD");
     shader_init(&shad2, "v8PVD2");
 
     portal_init(&portal,1,2);
@@ -189,12 +189,12 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
 
     light_direction = v3_norm(light_direction);
     portal.model_portal1 =  m4_identity();// m4_translation(vec3(2,-4,-4));
-    portal.model_portal2 =  m4_translation(vec3(2,0,-10)); //m4_mul(m4_rotation_x(M_PIf  / 2),);
+    portal.model_portal2 =  m4_translation(vec3(2,0,-6)); //m4_mul(m4_rotation_x(M_PIf  / 2),);
     portal.model_portal2 = m4_mul(portal.model_portal2,  m4_rotation_y(M_PIf));
 
     float add_angle = 2 * M_PIf / 10;
     float angle = 0;
-    float radius = 10;
+    float radius = 15;
     for(int i = 0;  i < 10; i++, angle += add_angle)
     {
         objects[i] = m4_translation(vec3(radius *  cos(angle),0,radius * sin(angle)));
@@ -296,10 +296,9 @@ void main_state_render(GLFWwindow *window, void *args)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shad.shader);
-    glUseProgram(shad2.shader);
 
-    //glEnable(GL_TEXTURE_2D);
-    //glBindTexture(GL_TEXTURE_2D, doge_tex.tex_id);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, doge_tex.tex_id);
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -307,16 +306,15 @@ void main_state_render(GLFWwindow *window, void *args)
     glEnableVertexAttribArray(3);
     glEnableVertexAttribArray(4);
 
-//    glBindVertexArray(portal.vao);
-//
-//    shader_update(&shad,portal.model_portal1);
-//    glDrawArrays(GL_TRIANGLES, 0, 6);
-//
-//    shader_update(&shad,portal.model_portal2);
-//    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(portal.vao);
 
+    shader_update(&shad,portal.model_portal1);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    shader_update(&shad,portal.model_portal2);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    glUseProgram(shad2.shader);
 
     glBindVertexArray(mesh.vao_id);
     for(int i = 0; i < 10; i++)
