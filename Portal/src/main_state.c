@@ -25,6 +25,9 @@ float hoffset = 0;
 float time = 0.0f;
 int reshow_cursor_flag = 0;
 int last_lmb = 0;
+int last_z = 0;
+int last_x = 0;
+int fboCounter = 2;
 
 mat4_t view, projection, view_projection;
 
@@ -240,6 +243,7 @@ static rafgl_meshPUN_t mesh;
 static shader_data_t shad;
 static shader_data_t shad2;
 static shader_data_t shad3;
+static shader_data_t shad4;
 static shader_data_t shad_skybox;
 static portal_t portal;
 static tiles_t tiles;
@@ -289,24 +293,25 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height)
     shader_init(&shad, "v8PVD");
     shader_init(&shad2, "v8PVD2");
     shader_init(&shad3, "PostProcess");
+    shader_init(&shad4, "Image");
     shader_init(&shad_skybox, "skyboxShader");
 
     portal_init(&portal,1,2);
     tiles_init(&tiles);
 
-    rafgl_raster_load_from_image(&doge_raster, "res/images/img_1.png");
+    rafgl_raster_load_from_image(&doge_raster, "res/images/img_2.png");
 
     /* rezervisemo texture slot.  */
     rafgl_texture_init(&doge_tex);
     rafgl_texture_load_from_raster(&doge_tex, &doge_raster);
-    glBindTexture(GL_TEXTURE_2D, doge_tex.tex_id); /* bajndujemo doge teksturu */
-    /*  Filtriranje teksture, za slucaj umanjenja (MIN) i uvecanja (MAG)  */
+/*    glBindTexture(GL_TEXTURE_2D, doge_tex.tex_id); *//* bajndujemo doge teksturu *//*
+    *//*  Filtriranje teksture, za slucaj umanjenja (MIN) i uvecanja (MAG)  *//*
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    /*  Sta raditi ako su UV koordinate van 0-1 opsega? Ograniciti na ivicu (CLAMP) ili ponavljati (REPEAT) */
+    *//*  Sta raditi ako su UV koordinate van 0-1 opsega? Ograniciti na ivicu (CLAMP) ili ponavljati (REPEAT) *//*
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0); /* unbajndujemo doge teksturu */
+    glBindTexture(GL_TEXTURE_2D, 0); *//* unbajndujemo doge teksturu */
 
 
 
@@ -418,6 +423,13 @@ void main_state_update(GLFWwindow *window, float delta_time, rafgl_game_data_t *
     if(game_data->keys_down['K']) portal.model_portal2.m30 += 0.1f;
     if(game_data->keys_down['L']) portal.model_portal2.m30 += -0.1f;
 
+
+    if(game_data->keys_down['Z'] && !last_z && fboCounter > 0) fboCounter--;
+    if(game_data->keys_down['X'] && !last_x && fboCounter < 2) fboCounter++;
+
+    last_z = game_data->keys_down['Z'];
+    last_x = game_data->keys_down['X'];
+
     //model
     //if(game_data->keys_down['B'])
     //model = m4_mul(model, m4_rotation_x(1.0f  * delta_time));
@@ -457,6 +469,7 @@ void main_state_render(GLFWwindow *window, void *args)
     glClearColor(0.0f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glDepthMask(GL_FALSE);
     glDepthMask(GL_FALSE);
 
     glUseProgram(shad_skybox.shader);
@@ -515,23 +528,24 @@ void main_state_render(GLFWwindow *window, void *args)
     }
 
 
-    glUseProgram(shad.shader);
-    //glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D,  doge_tex.tex_id);//doge_tex.tex_id);
+
+    glUseProgram(shad4.shader);
 
     glBindVertexArray(tiles.vao);
     for(int i = 0; i< tiles.m; i++)
         for(int j = 0; j< tiles.n; j++)
         {
-            shader_update(&shad, tiles.models[i][j], view_projection);
+            shader_update(&shad4, tiles.models[i][j], view_projection);
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D,  doge_tex.tex_id);//doge_tex.tex_id);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
     glBindTexture(GL_TEXTURE_2D,0);
 
-    glDisableVertexAttribArray(4);
-    glDisableVertexAttribArray(3);
-    glDisableVertexAttribArray(2);
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
 
 
     glBindVertexArray(quad_vao);
@@ -550,7 +564,17 @@ void main_state_render(GLFWwindow *window, void *args)
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     //draw fbo
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo3.fbo_id);
+    switch (fboCounter) {
+        case 0:
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo.fbo_id);
+            break;
+        case 1:
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo2.fbo_id);
+            break;
+        case 2:
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo3.fbo_id);
+            break;
+    }
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720,
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
